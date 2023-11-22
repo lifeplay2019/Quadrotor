@@ -213,6 +213,65 @@ class QuadActuator(object):
         return self.outThrust, self.outTorque
 
 class QuadModel(object):
+    """
+     Module Interface, main class to describe the dynamic of the quadrotor
+    """
+    def __init__(self, uav_para: QuadParas, sim_para: QuadSimOpt):
+        """
+        init of quadrotor
+        :param uav_para:  parameter of the uav
+        :param sim_para:  parameter of the simple--without the dynamic, "dynamic"--with the dynamic
+        """
+        self.uavPara = uav_para
+        self.simPara = sim_para
+        self.actuator = QuadActuator(self.uavPara, sim_para.actuatorMode)
+
+        # state of the quadrotor initial condition
+        # Along with the position, velocity, attitude, angular velocity
+        # and the linear acceleration
+        self.position = np.array([0, 0, 0])
+        self.velocity = np.array([0, 0, 0])
+        self.attitude = np.array([0, 0, 0])
+        self.angular  = np.array([0, 0, 0])
+        self.accelerate = np.zeros(3)
+
+        # time control
+        self._ts = 0
+
+        # initial the sensor
+        """
+        to be continue
+        """
+
+    @property
+    def ts(self):
+        """
+        return the tick of the system
+        :return:
+        """
+        return  self._ts
+
+    def generate_init_att(self):
+         """
+
+         """
+         angle = self.simPara.initAtt * D2R
+         if self.simPara.initMode == SimInitType.rand:
+             phi = (1 * np.random.random() - 0.5) * angle[0]
+             theta = (1 * np.random.random() - 0.5) * angle[1]
+             psi = (1 * np.random.random() - 0.5) * angle[2]
+         else:
+             phi = angle[0]
+             theta = angle[1]
+             psi = angle[2]
+         return np.array([phi, theta, psi])
+
+    def
+
+
+
+
+
 
 
 
