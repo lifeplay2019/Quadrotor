@@ -19,13 +19,14 @@ import SensorCompass
 
 # Some  key constant that been needed
 # Radius to degree
-D2R = np.pi/180
+D2R = np.pi / 180
 # state space modle dimension [phi theta psi p q r u v w x y z] R12
 state_dim = 12
 # control vector ad action dimension [ft taux tauy tauz]
 action_dim = 4
-state_bound = np.array([10, 10, 10, 5, 5, 5, 80 * D2R, 80 * D2R, 180 * D2R, 100 * D2R, 100 * D2R, 100 * D2R,])
+state_bound = np.array([10, 10, 10, 5, 5, 5, 80 * D2R, 80 * D2R, 180 * D2R, 100 * D2R, 100 * D2R, 100 * D2R, ])
 action_bound = np.array([1, 1, 1, 1])
+
 
 def rk4(func, x0, action, h):
     """
@@ -44,9 +45,11 @@ def rk4(func, x0, action, h):
     x1 = x0 + h * (k1 + 2 * k2 + 2 * k3 + k4) / 6
     return x1
 
+
 class StructureType(Enum):
     quad_x = enum.auto()
     quad_plus = enum.auto()
+
 
 class QuadParas(object):
     """Define the parameters of quadrotor model
@@ -68,7 +71,9 @@ class QuadParas(object):
                  rotor_i=9.90e-5,
                  rotor_t=1.36e-2):
         """quadrotor parameters
-        These parameters are able to be estimation in web(https://flyeval.com/) if you do not have a real UAV.
+        These parameters are able to be estimation in web
+        (https://flyeval.com/) since I do not have a real uav.
+        the only one that is real has already been damage by myself
         common parameters:
             g          : N/kg,              gravity
             rotor-num  : int,              number of rotors, e.g. 4, 6, 8...
@@ -102,9 +107,11 @@ class QuadParas(object):
         self.rotorInertia = rotor_i
         self.rotorTimScale = 1 / rotor_t
 
+
 class SimInitType(Enum):
     rand = enum.auto()
     fixed = enum.auto()
+
 
 class ActuatorMode(Enum):
     simple = enum.auto()
@@ -113,20 +120,22 @@ class ActuatorMode(Enum):
     dynamic_voltage = enum.auto()
     disturbance_voltage = enum.auto()
 
+
 class QuadSimOpt(object):
     """
     parameters for guiding the simulation process
     """
+
     def __init__(self,
-                 init_mode = SimInitType.rand,
-                 init_att = np.array([5, 5, 5]),
-                 init_pos = np.array([1, 1, 1]),
-                 max_position = 10,
-                 max_velocity = 10,
-                 max_attitude = 100,
-                 max_angular = 200,
+                 init_mode=SimInitType.rand,
+                 init_att=np.array([5, 5, 5]),
+                 init_pos=np.array([1, 1, 1]),
+                 max_position=10,
+                 max_velocity=10,
+                 max_attitude=100,
+                 max_angular=200,
                  sysnoise_bound_pos=0,
-                 sysnoise_bound_att=0,
+                 sysnoise_bound_att: object = 0,
                  actuator_mode=ActuatorMode.simple,
                  enable_sensor_sys=False):
         """
@@ -155,10 +164,12 @@ class QuadSimOpt(object):
         self.actuatorMode = actuator_mode
         self.enableSensorSys = enable_sensor_sys
 
+
 class QuadActuator(object):
     """
     Dynamic of  actuator about the motor and propeller
     """
+
     def __init__(self, quad_para: QuadParas, mode: ActuatorMode):
         """Parameters maintain together
         :param quad_para:   parameters of quadrotor,
@@ -186,7 +197,7 @@ class QuadActuator(object):
         rate_dot = self.motorPara_scale * action + self.motorPara_bias - self.para.rotorTimScale * rotor_rate
         return rate_dot
 
-    def  reset(self):
+    def reset(self):
         """
         reset all the states
         :return:
@@ -212,10 +223,12 @@ class QuadActuator(object):
         self.outTorque = self.para.rotorCm * np.square(self.rotorRate)
         return self.outThrust, self.outTorque
 
+
 class QuadModel(object):
     """
      Module Interface, main class to describe the dynamic of the quadrotor
     """
+
     def __init__(self, uav_para: QuadParas, sim_para: QuadSimOpt):
         """
         init of quadrotor
@@ -232,7 +245,7 @@ class QuadModel(object):
         self.position = np.array([0, 0, 0])
         self.velocity = np.array([0, 0, 0])
         self.attitude = np.array([0, 0, 0])
-        self.angular  = np.array([0, 0, 0])
+        self.angular = np.array([0, 0, 0])
         self.accelerate = np.zeros(3)
 
         # time control
@@ -249,45 +262,125 @@ class QuadModel(object):
         return the tick of the system
         :return:
         """
-        return  self._ts
+        return self._ts
 
     def generate_init_att(self):
+        """
+         use to generate the initial attitude
+         of the quadrotor in simPara
          """
+        angle = self.simPara.initAtt * D2R
+        if self.simPara.initMode == SimInitType.rand:
+            phi = (1 * np.random.random() - 0.5) * angle[0]
+            theta = (1 * np.random.random() - 0.5) * angle[1]
+            psi = (1 * np.random.random() - 0.5) * angle[2]
+        else:
+            phi = angle[0]
+            theta = angle[1]
+            psi = angle[2]
+        return np.array([phi, theta, psi])
 
-         """
-         angle = self.simPara.initAtt * D2R
-         if self.simPara.initMode == SimInitType.rand:
-             phi = (1 * np.random.random() - 0.5) * angle[0]
-             theta = (1 * np.random.random() - 0.5) * angle[1]
-             psi = (1 * np.random.random() - 0.5) * angle[2]
-         else:
-             phi = angle[0]
-             theta = angle[1]
-             psi = angle[2]
-         return np.array([phi, theta, psi])
+    def generate_init_pos(self):
+        """
+        use to generate the initial position of the
+        quadrotor in simPara
+        :return:
+        """
+        pos = self.simPara.initPos
+        if self.simPara.initMode == SimInitType.rand:
+            x = (1 * np.random.random() - 0.5) * pos[0]
+            y = (1 * np.random.random() - 0.5) * pos[1]
+            z = (1 * np.random.random() - 0.5) * pos[2]
+        else:
+            x = pos[0]
+            y = pos[1]
+            z = pos[2]
+        return np.array([x, y, z])
 
-    def
+    def reset_state(self, att='none', pos='none'):
+        """
+        first set time to 0, and then reset the state for the position and attitude
+        :param att:
+        :param pos:
+        :return:
+        """
+        self._ts = 0
+        self.actuator.reset()
+        if isinstance(att, str):
+            self.attitude = self.generate_init_att()
+        else:
+            self.attitude = att
 
+        if isinstance(pos,str):
+            self.position = self.generate_init_pos()
+        else:
+            self.position = pos
 
+        self.velocity = np.array([0, 0, 0])
+        self.angular = np.array([0, 0, 0])
 
+        # if the sensor system reset
+        """
+        to be continue
+        """
 
+    def dynamic_basic(self, state, action):
+        """
+        This is the main part of the dynamic function, it may cause a lot
+        of computation, so it need to be fast.
+        the majority of the dynamic_basic
+        :param state:
+        for linear position:
+        0       1       2
+        p_x     p_y     p_z
+        for linear velocity:
+        3       4       5
+        v_x     v_y     v_z
+        for angular position:
+        6       7       8
+        roll    pitch    yaw
+        for angular velocity:
+        9       10      11
+        v_roll  v_pitch v_yaw
+        :param action: u1(sum of thrust) u2(torque for roll) u3(torque for pitch)
+                        u4(torque for yaw)
+        :return: derivatives of the state....
+        """
+        # variable used
+        att_cos = np.cos(state[6: 9])
+        att_sin = np.sin(state[6: 9])
+        noise_pos = self.simPara.sysNoisePos * np.random.random()
+        noise_att = self.simPara.sysNoiseAtt * np.random.random()
 
+        # dot state
+        dot_state = np.zeros([12])
 
+        # dynamic of position
+        dot_state[0: 3] = state[3: 6]
+        # if you want you can calculate the whole rotation matrix,
+        # in here we just care the last column (R_zyx(phi, theta, psi))
+        # also this is a SO(3) group
+        dot_state[3: 6] = action[0] / self.uavPara * np.array([
+             att_cos[2] * att_sin[1] * att_cos[0] + att_sin[2] * att_sin[0],
+             att_cos[2] * att_sin[1] * att_cos[0] - att_sin[2] * att_sin[0],
+             att_cos[0] * att_cos[1]
+        ]) - np.array([0, 0, self.uavPara.g]) + noise_pos
 
+        # dynamic of the attitude
+        dot_state[6: 9] = state[6: 9]
+        # this part confine the Coriolis and Centrifugal effect
+        # This part of the variable is highly depend on the uav that you choose
+        # or has been provided by the manufacture
+        # This equation should be the same as the torque for the yaw
+        rotor_rate_sum = (
+            self.actuator.rotorRate[3] + self.actuator.rotorRate[2]
+            - self.actuator.rotorRate[1] + self.actuator.rotorRate[0]
+        )
 
+        para = self.uavPara
+        dor_state[6: 9] = np.array([
 
-
-
-
-
-
-
-
-
-
-
-
-
+        ])
 
 
 
