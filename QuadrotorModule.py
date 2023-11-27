@@ -379,8 +379,18 @@ class QuadModel(object):
 
         para = self.uavPara
         dor_state[6: 9] = np.array([
-            state[10] * state[11] * (para.uavInertia[1])
-        ])
+            state[10] * state[11] * (para.uavInertia[1] - para.uavInertia[2]) / para.uavInertia[0]
+            - para.rotorInertia / para.uavInertia[0] * state[10] * rotor_rate_sum
+            + para.uavL * action[1] / para.uavInertia[0],
+            state[9] * state[11] * (para.uavInertia[2] - para.uavInertia[0]) / para.uavInertia[1]
+            + para.rotorInertia / para.uavInertia[1] * state[9] * rotor_rate_sum
+            + para.uavL * action[2] / para.uavInertia[1],
+            state[9] * state[10] * (para.uavInertia[0] - para.uavInertia[1]) / para.uavInertia[2]
+            + action[3] / para.uavInertia[2]
+        ]) + noise_att)
+
+        return dot_state
+
 
 
 
