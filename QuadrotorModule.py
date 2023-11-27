@@ -379,7 +379,7 @@ class QuadModel(object):
 
         para = self.uavPara
         dor_state[6: 9] = np.array([
-            state[10] * state[11] * ([111])
+            state[10] * state[11] * (para.uavInertia[1])
         ])
 
 
