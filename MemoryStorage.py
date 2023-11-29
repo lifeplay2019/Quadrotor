@@ -33,7 +33,7 @@ class ReplayBuffer(object):
         # episodeRew is the sun rewards of step for each episode
         self.episodeNum = 0
         self.episodePos = deque()
-        self.episodeRew = deque()
+        self.episodeRewards = deque()
 
     def buffer_append(self, experience):
         """" append data for buffer """

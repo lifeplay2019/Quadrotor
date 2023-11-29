@@ -367,7 +367,7 @@ class QuadModel(object):
         ]) - np.array([0, 0, self.uavPara.g]) + noise_pos
 
         # dynamic of the attitude
-        dot_state[6: 9] = state[6: 9]
+        dot_state[6: 9] = state[9: 12]
         # this part confine the Coriolis and Centrifugal effect
         # This part of the variable is highly depend on the uav that you choose
         # or has been provided by the manufacture
@@ -378,7 +378,7 @@ class QuadModel(object):
         )
 
         para = self.uavPara
-        dot_state[6: 9] = np.array([
+        dot_state[9: 12] = np.array([
             state[10] * state[11] * (para.uavInertia[1] - para.uavInertia[2]) / para.uavInertia[0]
             - para.rotorInertia / para.uavInertia[0] * state[10] * rotor_rate_sum
             + para.uavL * action[1] / para.uavInertia[0],
@@ -393,6 +393,34 @@ class QuadModel(object):
         this part is use for the future edit
         may be edit in the future
         """
+        """
+        temp1 = state[10] * state[11] *(para.uavInertia[1] - para.uavInertia[2]) / para.uavInertia[0]
+        temp2 = -para.rotorInertia / para.uavInertia[0] *state[10] * rotor_rate_sum
+        temp3 = +para.uavL * action[1] / para.uavInertia[0]
+        print('Dynamic Test', temp1,temp2,temp3,action)
+        """
+        return dot_state
+    def observe(self):
+        """
+        output the system state, with sensor or without sensor
+        :return:
+        """
+        if self.simPara.enableSensorSys:
+            sensor_data = dict()
+            for index, sensor in enumerate(self,sensorlist):
+                # name = str(index) + '-' sensor.get_name()
+                name = sensor.get_name()
+                sensor_data.update({name: sensor.observe()})
+            return sensor_data
+        else:
+            return np.hstack([self.position, self.velocity, self.attitude, self.angular])
+
+    @property
+    def state(self):
+        return np.hstack([self.position, self.velocity, self.attitude, self.angular])
+    def  is_finished(self):
+        if (np.max(np.abs(self.position)) )
+
 
 
 
