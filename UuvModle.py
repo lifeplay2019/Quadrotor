@@ -1,10 +1,3 @@
-'''
-@File    :   UuvModel.py
-@Time    :
-@Author  :
-@Contact :
-'''
-
 
 # here put the import lib
 import numpy as np
