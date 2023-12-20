@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
 """'abstract class for sensors, define the general call interface'
 Yuxin HU
 First Version: 2022.10.10
